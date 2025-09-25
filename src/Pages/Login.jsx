@@ -52,7 +52,6 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 relative overflow-hidden">
       {/* Subtle background gradient for depth */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(249,115,22,0.15),rgba(255,255,255,0))]"></div>
       
       <motion.div
         className="relative z-10 bg-gray-800/50 backdrop-blur-sm border border-gray-700 p-8 rounded-2xl shadow-2xl w-full max-w-md text-center"

@@ -20,14 +20,14 @@ const staggerContainer = {
 const AboutPage = () => {
   return (
     
-    <div id='about' className="bg-gray-900 text-white min-h-screen">
+    <div id='about' className="bg-gray-900 border-t border-gray-800 text-white min-h-screen">
       <motion.section 
         initial="hidden"
         animate="visible"
         variants={staggerContainer}
         className="text-center py-20 px-4 relative overflow-hidden"
       >
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(249,115,22,0.2),rgba(255,255,255,0))]"></div>
+        <div className='relative '></div>
         <motion.h1 variants={fadeIn} className="text-5xl md:text-6xl font-extrabold mb-4">
           About Note<span className="text-orange-500">Nexus</span>
         </motion.h1>

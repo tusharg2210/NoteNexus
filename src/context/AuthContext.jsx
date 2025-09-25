@@ -12,9 +12,10 @@ const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const provider = new GoogleAuthProvider();
+    const [loading, setLoading] = useState(true); // This is important
+
     const signInWithGoogle = () => {
+        const provider = new GoogleAuthProvider();
         return signInWithPopup(auth, provider);
     };
 
@@ -25,9 +26,10 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
-            setLoading(false);
+            setLoading(false); // Set loading to false once check is complete
         });
 
+        // This is good for handling sign-in redirects
         getRedirectResult(auth).catch((error) => {
             console.error("Error processing redirect result:", error);
         });
@@ -35,11 +37,13 @@ export const AuthProvider = ({ children }) => {
         return () => unsubscribe();
     }, []);
 
-    const value = { user, signInWithGoogle, logout };
+    // THE FIX IS HERE: We must include 'loading' in the value
+    const value = { user, loading, signInWithGoogle, logout };
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {/* We can remove !loading from here to let children handle their own loading state */}
+            {children} 
         </AuthContext.Provider>
     );
 };

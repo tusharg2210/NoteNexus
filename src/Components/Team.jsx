@@ -80,6 +80,7 @@ function Team() {
   }, []);
 
   return (
+    <>
     <div id="team" className="bg-gray-900 border-t border-gray-800 text-white min-h-screen">
       <motion.section
         initial="hidden"
@@ -88,9 +89,8 @@ function Team() {
         variants={staggerContainer}
         className="py-20 px-6 container mx-auto"
       >
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(249,115,22,0.2),rgba(255,255,255,0))]"></div>
 
-        <motion.h2 variants={fadeIn} className="text-6xl font-bold text-center mb-10 border-b-1 p-4 border-orange-500  transition-transform">Meet the <span className="text-orange-500">Team</span></motion.h2>
+        <h2 className="text-6xl font-bold text-center mb-10 border-b-1 p-4 border-orange-500  transition-transform">Meet the <span className="text-orange-500">Team</span></h2>
 
         {loading ? (
           <div className="flex justify-center items-center py-8">
@@ -117,6 +117,7 @@ function Team() {
         )}
       </motion.section>
     </div>
+    </>
   );
 }
 

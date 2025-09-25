@@ -1,20 +1,11 @@
 import React from "react";
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useAuth } from '../context/AuthContext';
 
 function HeroSection() {
 
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const auth = getAuth();
-        const user = auth.currentUser;
-        onAuthStateChanged(auth, (user) => {
-            setIsLoggedIn(!!user);
-        });
-        // Function to toggle the mobile menu
-        const toggleMenu = () => {
-            setIsMenuOpen(!isMenuOpen);
-        };
+    const { user} = useAuth();
 
     return (
         <>
@@ -42,7 +33,7 @@ function HeroSection() {
                         </div>
                         <div className="mt-12 gap-6 flex flex-col sm:flex-row justify-center md:justify-start">
 
-                            {isLoggedIn ? (
+                            {user ? (
                                 <button className="bg-orange-500 text-white px-8 py-3 rounded-xl hover:bg-orange-600 transition duration-300 transform hover:scale-105 shadow-lg">
                                     <RouterLink to="/resource">Get Started</RouterLink>
                                 </button>

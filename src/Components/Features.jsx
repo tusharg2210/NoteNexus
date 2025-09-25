@@ -36,9 +36,9 @@ function Features() {
                     variants={staggerContainer}
                     className="py-16 bg-gray-900/50 px-6"
                 >
-                    <div className="container mx-auto"><div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(249,115,22,0.2),rgba(255,255,255,0))]"></div>
+                    <div className="container mx-auto">
 
-                        <motion.h2 variants={fadeIn} className="text-6xl font-bold text-center mb-10 border-b-1 p-4 border-orange-500  transition-transform">Our Core <span className="text-orange-500">Values</span></motion.h2>
+                        <h2 className="text-6xl font-bold text-center mb-10 border-b-1 p-4 border-orange-500  transition-transform">Our Core <span className="text-orange-500">Values</span></h2>
                         
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                             <ValueCard

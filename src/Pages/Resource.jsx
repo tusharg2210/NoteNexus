@@ -141,7 +141,6 @@ function Resource() {
         variants={staggerContainer}
         className="text-center w-full px-4 relative overflow-hidden mb-10"
       >
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(249,115,22,0.2),rgba(255,255,255,0))]"></div>
         <motion.h1
           variants={fadeIn}
           className="text-5xl font-bold text-center mt-10 font-serif tracking-wider mb-4"
