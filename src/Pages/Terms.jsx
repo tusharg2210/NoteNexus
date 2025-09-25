@@ -72,7 +72,7 @@ function Terms() {
                     </motion.div>
                 </div>
                 <motion.div variants={itemVariants} className="text-center mt-8">
-                    <RouterLink to="/" className="text-orange-400 hover:text-orange-300 transition-colors">← Back to Home</RouterLink>
+                    <RouterLink to="/" onClick={() => window.scrollTo(0, 0)} className="text-orange-400 hover:text-orange-300 transition-colors">← Back to Home</RouterLink>
                 </motion.div>
             </motion.div>
         </div>
