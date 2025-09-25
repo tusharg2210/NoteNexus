@@ -1,0 +1,11 @@
+@import "tailwindcss";
+@layer utilities {
+    .animate-spin-slower {
+        --tw-animation-duration: 20s;
+        animation: spin var(--tw-animation-duration) linear infinite;
+    }
+    .animate-spin-slower-reverse {
+        --tw-animation-duration: 20s;
+        animation: spin var(--tw-animation-duration) linear infinite reverse;
+    }
+}
