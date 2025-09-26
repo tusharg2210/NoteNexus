@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import HeroSection from '../Components/HeroSection';
 import AboutSection from '../Pages/AboutUs';
-import FeaturesSection from '../Components/Features';
-import TeamSection from '../Components/Team';
+import FeaturesSection from './Features';
+import TeamSection from './Team';
 
 function HomePage() {
    

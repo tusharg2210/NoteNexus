@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { db } from '../firebase';
-import { ref, get } from 'firebase/database';
+import useDatabase from '../middleware/useDatabase'; // Import the hook
 
 // Reusable animation variants for Framer Motion
 const fadeIn = {
@@ -45,39 +44,12 @@ const TeamMemberCard = ({ name, batch, branch, college, imgUrl, githubURL, linke
 );
 
 function Team() {
-  const [admins, setAdmins] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { database, loading } = useDatabase(); // Use the hook to get data and loading state
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchAdmin = async () => {
-      try {
-        const adminRef = ref(db, 'admin');
-        const snapshot = await get(adminRef);
-        if (snapshot.exists() && isMounted) {
-          const adminsData = snapshot.val();
-          const loadedAdmins = Object.keys(adminsData).map(key => ({
-            id: key,
-            ...adminsData[key]
-          }));
-          setAdmins(loadedAdmins);
-        }
-      } catch (error) {
-        console.error("Error fetching admin members:", error);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchAdmin();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const admins = database?.admin ? Object.keys(database.admin).map(key => ({
+      id: key,
+      ...database.admin[key]
+  })) : [];
 
   return (
     <>

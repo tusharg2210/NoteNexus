@@ -1,56 +1,11 @@
-// src/Pages/Resource.jsx
-
-import React, { useEffect, useReducer, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import PdfViewer from '../Components/core/PdfViewer';
-import { db } from '../firebase';
-import { ref, get } from 'firebase/database';
+import useDatabase from '../middleware/useDatabase';
+import FieldSelector from '../Components/common/FieldSelector';
+import ResourceViewer from '../Components/common/ResourceView';
+import { useAuth } from '../context/AuthContext';
 
-// Centralized state logic with a reducer function
-const initialState = {
-  collegeData: [],
-  filters: {
-    college: 'select',
-    course: 'select',
-    semester: 'select',
-    docType: 'select'
-  },
-  searchParams: null,
-  loading: true,
-};
-
-function reducer(state, action) {
-  switch (action.type) {
-    case 'SET_DATA':
-      return { ...state, collegeData: action.payload, loading: false };
-    case 'SET_FILTER': {
-      const { name, value } = action.payload;
-      const newFilters = { ...state.filters, [name]: value };
-      // Reset dependent filters when a parent filter changes
-      if (name === 'college') {
-        newFilters.course = 'select';
-        newFilters.semester = 'select';
-        newFilters.docType = 'select';
-      }
-      if (name === 'course') {
-        newFilters.semester = 'select';
-        newFilters.docType = 'select';
-      }
-      if(name === 'semester') {
-        newFilters.docType = 'select';
-      }
-      return { ...state, filters: newFilters, searchParams: null };
-    }
-    case 'SET_SEARCH_PARAMS':
-      return { ...state, searchParams: state.filters };
-    case 'RESET':
-      return { ...state, filters: initialState.filters, searchParams: null };
-    default:
-      throw new Error();
-  }
-}
-
-// Reusable animation variants
+// --- Reusable Animation Variants ---
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
@@ -66,138 +21,133 @@ const staggerContainer = {
 };
 
 function Resource() {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const { collegeData, filters, searchParams, loading } = state;
+    // 1. Get all data, loading state, and the current user
+    const { database, loading } = useDatabase();
+    const { user } = useAuth();
+    
+    // 2. Manage local state for filters and search triggers
+    const [filters, setFilters] = useState({ college: 'select', course: 'select', semester: 'select', docType: 'select' });
+    const [searchParams, setSearchParams] = useState(null);
+    const [isPersonalized, setIsPersonalized] = useState(false);
 
-  // Fetch data once on component mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const snapshot = await get(ref(db, 'colleges/'));
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const dataList = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-          dispatch({ type: 'SET_DATA', payload: dataList });
+    // Effect to pre-fill filters from user profile
+    useEffect(() => {
+        if (user && database?.users?.[user.uid]?.profile) {
+            const userProfile = database.users[user.uid].profile;
+            // ✅ FIX: Removed the `baseDbPath` definition from here. It doesn't belong in this scope.
+            if (userProfile.college && userProfile.course && userProfile.semester) {
+                setFilters({
+                    college: userProfile.college,
+                    course: userProfile.course,
+                    semester: userProfile.semester,
+                    docType: 'select'
+                });
+                setIsPersonalized(true);
+            }
         }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        dispatch({ type: 'SET_DATA', payload: [] }); // Set empty data on error
-      }
+    // ✅ FIX: Removed `baseDbPath` from the dependency array.
+    }, [user, database]);
+
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        setFilters(prev => {
+            const newFilters = { ...prev, [name]: value };
+            if (name === 'college') { newFilters.course = 'select'; newFilters.semester = 'select'; newFilters.docType = 'select'; }
+            if (name === 'course') { newFilters.semester = 'select'; newFilters.docType = 'select'; }
+            if (name === 'semester') { newFilters.docType = 'select'; }
+            return newFilters;
+        });
+        setSearchParams(null);
+        setIsPersonalized(false);
     };
-    fetchData();
-  }, []);
+    
+    const handleSearch = () => {
+        if (Object.values(filters).some(value => value === 'select')) {
+            alert("Please select an option for all filters.");
+            return;
+        }
+        setSearchParams(filters);
+    };
 
-  // Use `useMemo` to efficiently calculate available courses
-  const availableCourses = useMemo(() => {
-    if (filters.college === 'select') return [];
-    const selectedCollege = collegeData.find(c => c.id === filters.college);
-    if (!selectedCollege?.courses) return [];
-    return Object.keys(selectedCollege.courses).map(key => ({
-      id: key,
-      ...selectedCollege.courses[key]
-    }));
-  }, [filters.college, collegeData]);
+    // Memoize the calculation of items to display based on filters
+    const itemsToDisplay = useMemo(() => {
+        if (!searchParams || !database) return [];
+        const { college, course, semester, docType } = searchParams;
 
-  // Use `useMemo` to efficiently calculate available semesters
-  const availableSemesters = useMemo(() => {
-    if (filters.course === 'select' || !availableCourses.length) return [];
-    const selectedCourseData = collegeData
-      .find(c => c.id === filters.college)
-      ?.courses[filters.course];
-      
-    if (!selectedCourseData?.sem) return [];
-    return Object.keys(selectedCourseData.sem).map(key => ({
-      id: key,
-      ...selectedCourseData.sem[key]
-    }));
-  }, [filters.college, filters.course, collegeData]);
-
-  // Use `useMemo` to efficiently calculate available document categories
-  const availableDocCategories = useMemo(() => {
-    if (filters.semester === 'select' || !availableSemesters.length) return [];
-    const selectedSemData = collegeData
-      .find(c => c.id === filters.college)
-      ?.courses[filters.course]?.sem[filters.semester];
-      
-    // Look for the 'docs' node and return its keys (e.g., ['pyq', 'notes'])
-    if (!selectedSemData?.docs) return [];
-    return Object.keys(selectedSemData.docs);
-  }, [filters.college, filters.course, filters.semester, collegeData]);
-
-  const handleSearch = () => {
-    if (Object.values(filters).some(value => value === 'select')) {
-      alert("Please select an option for all filters.");
-      return;
-    }
-    dispatch({ type: 'SET_SEARCH_PARAMS' });
-  };
-  
-  
-  return (
-    <div id='resource' className="min-h-screen p-5 bg-gray-900 text-gray-300 flex flex-col items-center">
-      <motion.section
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-        className="text-center w-full px-4 relative overflow-hidden mb-10"
-      >
-        <motion.h1
-          variants={fadeIn}
-          className="text-5xl font-bold text-center mt-10 font-serif tracking-wider mb-4"
-        >
-          <span className="text-orange-500 text-6xl">S</span>tudy{' '}
-          <span className="text-orange-500 text-6xl">M</span>aterials
-        </motion.h1>
-        <div className='border-b border-orange-400 max-w-3xl mx-auto'></div>
-        <motion.p variants={fadeIn} className="text-lg md:text-xl text-gray-300 max-w-4xl mx-auto mt-4">
-          Explore our extensive collection of Study Materials to aid your exam preparation.
-        </motion.p>
-      </motion.section>
-
-      <div id="filter" className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-md mb-8">
-        <div className=" grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 flex flex-col justify-center">
-            <select name="college" value={filters.college} onChange={e => dispatch({ type: 'SET_FILTER', payload: e.target })} disabled={loading} className="bg-gray-700 rounded-4xl text-white p-3 m-2 disabled:opacity-50">
-              <option value="select" disabled>Select College</option>
-              {collegeData.map((college) => <option key={college.id} value={college.id}>{college.collegeName}</option>)}
-            </select>
-
-            <select name="course" value={filters.course} onChange={e => dispatch({ type: 'SET_FILTER', payload: e.target })} disabled={!availableCourses.length} className="bg-gray-700 rounded-4xl text-white p-3 m-2 disabled:opacity-50">
-              <option value="select" disabled>Select Course</option>
-              {availableCourses.map((course) => <option key={course.id} value={course.id}>{course.courseName}</option>)}
-            </select>
-
-            <select name="semester" value={filters.semester} onChange={e => dispatch({ type: 'SET_FILTER', payload: e.target })} disabled={!availableSemesters.length} className="bg-gray-700 rounded-4xl text-white p-3 m-2 disabled:opacity-50">
-              <option value="select" disabled>Select Semester</option>
-              {availableSemesters.map((sem) => <option key={sem.id} value={sem.id}>{sem.semName}</option>)}
-            </select>
-
-            <select name="docType" value={filters.docType} onChange={e => dispatch({ type: 'SET_FILTER', payload: e.target })} disabled={!availableDocCategories.length} className="bg-gray-700 rounded-4xl text-white p-3 m-2 disabled:opacity-50">
-              <option value="select" disabled>Select Document Type</option>
-              {availableDocCategories.map((category) => (
-                <option key={category} value={category}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </option>
-              ))}
-            </select>
-        </div>
-        <div className='flex gap-4 justify-center mt-4'>
-            <button className="bg-gray-600 text-white p-2 rounded hover:bg-gray-500" onClick={() => dispatch({ type: 'RESET' })}>Reset</button>
-            <button className="bg-orange-500 text-white p-2 rounded hover:bg-orange-600" onClick={handleSearch}>Search</button>
-        </div>
-      </div>
+        const docs = database.colleges?.[college]?.courses?.[course]?.sem?.[semester]?.docs?.[docType] || {};
         
-      <div className="w-full max-w-4xl">
-          {searchParams && (
-              <PdfViewer 
-                  college={searchParams.college}
-                  course={searchParams.course} 
-                  semester={searchParams.semester} 
-                  docType={searchParams.docType} 
-              />
-          )}
-      </div>
-    </div>
-  );
+        const itemList = Object.keys(docs)
+          .filter(key => key !== 'docName') // Filter out the placeholder key
+          .map(key => ({
+            id: key, 
+            ...docs[key],
+            originalPath: `colleges/${college}/courses/${course}/sem/${semester}/docs/${docType}/${key}`
+        }));
+
+        return itemList.sort((a, b) => b.uploadedAt - a.uploadedAt);
+    }, [searchParams, database]);
+
+    // ✅ FIX: Define `baseDbPath` in the main component scope, based on the current search.
+    const baseDbPath = searchParams
+        ? `colleges/${searchParams.college}/courses/${searchParams.course}/sem/${searchParams.semester}/docs/${searchParams.docType}`
+        : null;
+
+    return (
+        <div id='resource' className="min-h-screen p-5 bg-gray-900 text-gray-300 flex flex-col items-center">
+            <motion.section
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainer}
+                className="text-center w-full px-4 relative overflow-hidden mb-10"
+            >
+                <motion.h1 variants={fadeIn} className="text-5xl font-bold text-center mt-10 font-serif tracking-wider mb-4">
+                    <span className="text-orange-500 text-6xl">S</span>tudy <span className="text-orange-500 text-6xl">M</span>aterials
+                </motion.h1>
+                <div className='border-b border-orange-400 max-w-3xl mx-auto'></div>
+                <motion.p variants={fadeIn} className="text-lg md:text-xl text-gray-300 max-w-4xl mx-auto mt-4">
+                    Explore our extensive collection of Study Materials to aid your exam preparation.
+                </motion.p>
+            </motion.section>
+
+            <div id="filter" className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-md mb-8">
+                <FieldSelector
+                    colleges={database?.colleges}
+                    filters={filters}
+                    onFilterChange={handleFilterChange}
+                    loading={loading}
+                />
+                
+                <div className="mt-4">
+                     <label htmlFor="docType" className="sr-only">Select Document Type</label>
+                    <select id="docType" name="docType" value={filters.docType} onChange={handleFilterChange} disabled={loading || filters.semester === 'select'} className="bg-gray-700 text-white p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50">
+                        <option value="select" disabled>Select Document Type</option>
+                        <option value="pyq">PYQs</option>
+                        <option value="notes">Notes</option>
+                        <option value="books">Books</option>
+                        <option value="labs">Lab Manuals</option>
+                    </select>
+                </div>
+
+                <div className='flex gap-4 justify-center mt-6'>
+                    <button className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-500" onClick={() => { setFilters({ college: 'select', course: 'select', semester: 'select', docType: 'select' }); setSearchParams(null); setIsPersonalized(false); }}>Reset</button>
+                    <button className="bg-orange-500 text-white py-2 px-6 rounded-lg hover:bg-orange-600" onClick={handleSearch}>Search</button>
+                </div>
+                
+                {isPersonalized && (
+                    <div className="mt-4 border-t border-gray-700 pt-4">
+                        <button onClick={handleSearch} className="w-full bg-indigo-600 text-white font-bold py-3 rounded-lg hover:bg-indigo-700 transition-colors">
+                           Show My Resources
+                        </button>
+                    </div>
+                )}
+            </div>
+            
+            <div className="w-full max-w-4xl">
+                {searchParams && <ResourceViewer items={itemsToDisplay} baseDbPath={baseDbPath} />}
+            </div>
+        </div>
+    );
 }
 
 export default Resource;

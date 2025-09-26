@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
-import { db } from '../firebase';
-import { ref, onValue } from "firebase/database";
 
 // --- Icons ---
 const SignOutIcon = () => (
@@ -14,24 +12,24 @@ const LoadingSpinner = () => (
     <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-orange-500"></div>
 );
 
-const DocumentIcon = () => (
-    <svg className="w-6 h-6 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+const BookmarksIcon = () => (
+    <svg className="w-6 h-6 text-orange-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
 );
 
 
 // --- Animation Variants for Framer Motion ---
 const cardVariants = {
   hidden: { opacity: 0, y: 50, scale: 0.9 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
+  visible: {
+    opacity: 1,
+    y: 0,
     scale: 1,
-    transition: { 
+    transition: {
       type: 'spring',
       stiffness: 100,
       damping: 15,
       staggerChildren: 0.1
-    } 
+    }
   }
 };
 
@@ -44,29 +42,6 @@ const itemVariants = {
 const ProfilePage = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
-    const [bookmarks, setBookmarks] = useState([]); // State to hold bookmarks
-
-    // ✅ Fetch bookmarks when the user object is available
-    useEffect(() => {
-        if (user) {
-            const bookmarksRef = ref(db, `users/${user.uid}/bookmarks`);
-            const unsubscribe = onValue(bookmarksRef, (snapshot) => {
-                if (snapshot.exists()) {
-                    const data = snapshot.val();
-                    // Convert bookmarks object to an array
-                    const bookmarksList = Object.keys(data).map(key => ({
-                        id: key,
-                        ...data[key]
-                    }));
-                    setBookmarks(bookmarksList);
-                } else {
-                    setBookmarks([]);
-                }
-            });
-            // Cleanup listener on component unmount
-            return () => unsubscribe();
-        }
-    }, [user]); // Re-run effect if the user changes
 
     const handleSignOut = async () => {
         try {
@@ -110,7 +85,7 @@ const ProfilePage = () => {
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 relative overflow-hidden">
             
-            <motion.div 
+            <motion.div
                 className="relative z-10 bg-gray-800/50 backdrop-blur-sm border border-gray-700 p-8 rounded-2xl shadow-2xl w-full max-w-sm text-center"
                 variants={cardVariants}
                 initial="hidden"
@@ -135,29 +110,14 @@ const ProfilePage = () => {
                                 
                 <motion.div variants={itemVariants} className="my-6 border-t border-gray-700"></motion.div>
 
-                {/* ✅ Bookmarks Section */}
+                {/* Bookmarks Link */}
                 <motion.div variants={itemVariants} className="text-left">
-                    <h3 className="font-bold text-lg text-white mb-3">My Bookmarks</h3>
-                    <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
-                        {bookmarks.length > 0 ? (
-                            bookmarks.map(bookmark => (
-                                <motion.a 
-                                    key={bookmark.id}
-                                    href={bookmark.downloadURL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg hover:bg-gray-700 transition-colors duration-200"
-                                    variants={itemVariants}
-                                >
-                                    <DocumentIcon />
-                                    <span className="text-gray-300 text-sm truncate">{bookmark.docName}</span>
-                                </motion.a>
-                            ))
-                        ) : (
-                            <motion.p variants={itemVariants} className="text-gray-500 text-sm text-center py-4">No bookmarks yet.</motion.p>
-                        )}
-                    </div>
+                     <Link to="/bookmarks" onClick={()=>{window.scrollTo(0, 0)}} className="flex items-center gap-3 p-3 bg-gray-900/50 rounded-lg hover:bg-gray-700 transition-colors duration-200">
+                        <BookmarksIcon />
+                        <span className="text-gray-300 font-semibold">View My Bookmarks</span>
+                    </Link>
                 </motion.div>
+
 
                 {/* Sign Out Button */}
                 <motion.div variants={itemVariants} className="mt-8">
@@ -177,4 +137,3 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
-

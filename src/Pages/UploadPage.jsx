@@ -1,43 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '../firebase';
-import { ref, get } from 'firebase/database';
+import React from 'react';
+import useDatabase from '../middleware/useDatabase';
+import { useAuth } from '../context/AuthContext';
 import FileUpload from '../Components/core/FileUpload';
 
+const LoadingSpinner = () => (
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-orange-500"></div>
+    </div>
+);
+
 function UploadPage() {
-    const [currentUser, setCurrentUser] = useState(null);
-    const [collegeData, setCollegeData] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const { database, loading } = useDatabase();
 
-    useEffect(() => {
-        // Auth listener
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-        });
-
-        // Data fetcher
-        const fetchData = async () => {
-            const snapshot = await get(ref(db, 'colleges/'));
-            if (snapshot.exists()) {
-                const data = snapshot.val();
-                const dataList = Object.keys(data).map(key => ({ id: key, ...data[key] }));
-                setCollegeData(dataList);
-            }
-            setLoading(false);
-        };
-
-        fetchData();
-        return () => unsubscribeAuth(); // Cleanup
-    }, []);
-
-    if (loading) return <p className="text-white text-center">Loading...</p>;
+    if (loading) {
+        return <LoadingSpinner />;
+    }
     
-    if (!currentUser) return <p className="text-white text-center">Please sign in to upload documents.</p>;
+    // Convert colleges object to the array format the component expects
+    const collegeDataArray = database?.colleges ? 
+        Object.keys(database.colleges).map(key => ({ id: key, ...database.colleges[key] })) 
+        : [];
 
     return (
-        <div className="min-h-screen bg-gray-900 flex justify-center items-center p-4">
-             <FileUpload currentUser={currentUser} collegeData={collegeData} />
-        </div>
+        <FileUpload currentUser={user} collegeData={collegeDataArray} />
     );
 }
 
