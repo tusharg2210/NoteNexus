@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import useDatabase from '../middleware/useDatabase';
+import useDatabase from '../hooks/useDatabase';
 import { motion } from 'framer-motion';
 import ResourceViewer from '../Components/common/ResourceView';
 
@@ -15,11 +15,11 @@ const BookmarksPage = () => {
     const { database, loading } = useDatabase();
 
     const bookmarks = user && database?.users?.[user.uid]?.bookmarks
-        ? Object.keys(database.users[user.uid].bookmarks).map(key => ({
-            id: key,
-            ...database.users[user.uid].bookmarks[key]
-        }))
-        : [];
+    ? Object.keys(database.users[user.uid].bookmarks).map(key => ({
+        id: key,
+        ...database.users[user.uid].bookmarks[key]
+    }))
+    : [];
 
     if (loading) {
         return <LoadingSpinner />;

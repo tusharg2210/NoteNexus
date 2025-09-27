@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import useDatabase from '../middleware/useDatabase';
+import useDatabase from '../hooks/useDatabase';
 import FieldSelector from '../Components/common/FieldSelector';
 import ResourceViewer from '../Components/common/ResourceView';
 

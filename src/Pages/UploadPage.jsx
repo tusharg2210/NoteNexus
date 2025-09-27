@@ -1,5 +1,5 @@
 import React from 'react';
-import useDatabase from '../middleware/useDatabase';
+import useDatabase from '../hooks/useDatabase';
 import { useAuth } from '../context/AuthContext';
 import FileUpload from '../Components/core/FileUpload';
 

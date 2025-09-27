@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import useDatabase from '../middleware/useDatabase';
+import useDatabase from '../hooks/useDatabase';
 import ResourceViewer from '../Components/common/ResourceView';
 import { useAuth } from '../context/AuthContext';
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState,useEffect } from 'react';
 import { motion } from 'framer-motion';
-import useDatabase from '../middleware/useDatabase'; // Import the hook
+import useDatabase from '../hooks/useDatabase'; // Import the hook
 import { ref, onValue } from 'firebase/database';
  import { db } from '../firebase';
  
