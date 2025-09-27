@@ -1,7 +1,10 @@
 import React from 'react';
+import { useState,useEffect } from 'react';
 import { motion } from 'framer-motion';
 import useDatabase from '../middleware/useDatabase'; // Import the hook
-
+import { ref, onValue } from 'firebase/database';
+ import { db } from '../firebase';
+ 
 // Reusable animation variants for Framer Motion
 const fadeIn = {
   hidden: { opacity: 1, y: 20 },
@@ -44,12 +47,23 @@ const TeamMemberCard = ({ name, batch, branch, college, imgUrl, githubURL, linke
 );
 
 function Team() {
-  const { database, loading } = useDatabase(); // Use the hook to get data and loading state
+  const { loading } = useDatabase(); 
+  const [admins, setAdmins] = useState([]);
 
-  const admins = database?.admin ? Object.keys(database.admin).map(key => ({
-      id: key,
-      ...database.admin[key]
-  })) : [];
+  useEffect(() => {
+    const adminsRef = ref(db, "admins");
+    const unsub = onValue(adminsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const adminList = Object.values(data);
+        setAdmins(adminList);
+      } else {
+        setAdmins([]);
+      }
+    });
+
+    return () => unsub();
+  }, []);
 
   return (
     <>
@@ -75,7 +89,7 @@ function Team() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {admins.map((admin) => (
               <TeamMemberCard
-                key={admin.id}
+                key={admin.adminIMGURL}
                 name={admin.adminName}
                 batch={admin.adminBatch}
                 branch={admin.adminBranch}

@@ -1,34 +1,48 @@
 import { useState, useEffect } from 'react';
 import { db } from '../firebase';
 import { ref, onValue } from 'firebase/database';
+import { useAuth } from '../context/AuthContext';
 
-/**
- * A custom hook to fetch and cache the entire database structure.
- * This ensures data is fetched only once and stays in sync across the app.
- */
 const useDatabase = () => {
-    const [database, setDatabase] = useState(null);
+    const [database, setDatabase] = useState({});
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
 
     useEffect(() => {
-        const dbRef = ref(db);
-        const unsubscribe = onValue(dbRef, (snapshot) => {
-            if (snapshot.exists()) {
-                setDatabase(snapshot.val());
-            } else {
-                setDatabase({});
-            }
-            setLoading(false);
-        }, (error) => {
-            console.error("Firebase Read Error:", error);
-            setLoading(false);
+        // Fetch public colleges
+        const collegesRef = ref(db, "colleges");
+        const unsubColleges = onValue(collegesRef, (snapshot) => {
+            setDatabase((prev) => ({ ...prev, colleges: snapshot.val() || {} }));
         });
 
-        return () => unsubscribe();
-    }, []);
+        // Fetch user-specific data
+        let unsubUser = () => {};
+        if (user) {
+            const userRef = ref(db, `users/${user.uid}`);
+            unsubUser = onValue(userRef, (snapshot) => {
+                setDatabase((prev) => ({ ...prev, user: snapshot.val() || {} }));
+            });
+        }
+
+        // Fetch admin data (only if admin)
+        let unsubAdmin = () => {};
+        if (user) {
+            const adminRef = ref(db, `admins/${user.uid}`);
+            unsubAdmin = onValue(adminRef, (snapshot) => {
+                setDatabase((prev) => ({ ...prev, admin: snapshot.val() || null }));
+            });
+        }
+
+        setLoading(false);
+
+        return () => {
+            unsubColleges();
+            unsubUser();
+            unsubAdmin();
+        };
+    }, [user]);
 
     return { database, loading };
 };
 
 export default useDatabase;
-
